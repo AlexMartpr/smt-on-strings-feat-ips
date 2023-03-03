@@ -1,5 +1,5 @@
 from copy import deepcopy
-import random
+from typing import List
 
 class My_String():
     """
@@ -30,6 +30,7 @@ class My_String():
         self.var_name = var_name
         self.concats_strs = concats_strs
         self.replace_strs = replace_strs
+        self.could_be_empty = False
 
     def __str__(self):
         if self.cont is not None:
@@ -56,12 +57,32 @@ class My_String():
             return self.cont == o.cont
 
         if self.var_name:
-            return self.var_name == o.var_name
+            return  self.var_name == o.var_name
 
         if self.stype == 'str.++':
             return self.concats_strs == o.concats_strs
 
         return self.replace_strs == o.replace_strs
+
+
+    @staticmethod
+    def extend_eq(my_string1, my_string2):
+        if my_string1.stype != my_string2.stype:
+            return False
+
+        if my_string1.stype == 'const':
+            return my_string1.cont == my_string2.cont
+
+        if my_string1.var_name:
+            return  my_string1.var_name == my_string2.var_name or \
+                    my_string1.var_name + "'" == my_string2.var_name or \
+                    my_string2.var_name + "'" == my_string1.var_name
+
+        if my_string1.stype == 'str.++':
+            return my_string1.concats_strs == my_string2.concats_strs
+
+        return my_string1.replace_strs == my_string2.replace_strs
+
 
     def __hash__(self):
         return len(self.__str__())
@@ -141,7 +162,8 @@ class Formula():
             strings: [],
             atoms: [],
             literals: [],
-            clauses: []
+            clauses: [],
+            strings_counter: {}
         }
         """
         if not kwargs:
@@ -150,6 +172,7 @@ class Formula():
         self.atoms = kwargs['atoms']
         self.literals = kwargs['literals']
         self.clauses = kwargs['clauses']
+        self.strings_counter = kwargs['strings_counter']
         if 'logic' in kwargs:
             self.logic = kwargs['logic']
 
@@ -202,3 +225,95 @@ class Formula():
         for clause in self.clauses:
             # print(f'(or {" ".join([self.dpll_literal_view(literal) for literal in clause.literals])})')
             print(self.dpll_clause_view(clause))
+
+
+#Структуры, необходимые для реализации преобразования Нильсена
+class Substitution():
+    #substs - array of tuples, where tuple is (substitution(My_String), could_be_empty(Bool))
+    def __init__(self, variable_name, substs=None, from_left=True) -> None:
+        self.variable_name = variable_name
+        self.substs = []
+        self.from_left = from_left
+
+    def add_subst(self, subst):
+        self.substs.append(subst)
+
+    def __str__(self) -> str:
+        s = ''
+        s += str(self.variable_name) + '\n'
+        for sub in self.substs:
+            s += f'({str(sub[0])}, {sub[1]})'
+        return s 
+
+
+class Node():
+    def __init__(self, literal=None, parent=None, substitutions=None, children=None, index=0, sat_marker=False, cycle_marker=False, model=None) -> None:
+        self.parent = parent
+        self.children = children or [] 
+        
+        #массив подстановок по отношению к детям
+        self.substitutions = substitutions
+
+        self.literal = literal
+        
+        #0 index for root
+        self.index = index
+
+        #помечаем ноду, обозначающую, что уравнение можно решить
+        self.sat_marker = sat_marker
+
+        self.cycle_marker = cycle_marker
+
+        self.model = model
+
+
+    def __eq__(self, __o: object) -> bool:
+        if type(__o) is not Node:
+            return False
+
+        return self.index == __o.index
+
+    def __hash__(self) -> int:
+        return hash(self.index)
+
+    def __str__(self) -> str:
+        s = ''
+        s += f'Index node = {self.index}\n'
+        if self.parent:
+            s += f'\tparent index = {self.parent.index}\n'
+        s += f'\tliteral = {self.literal}\n'
+        s += f'\tsat_marker = {self.sat_marker}\n'
+        s += f'\tcycle_marker = {self.cycle_marker}\n'
+        # print(s)
+        
+        if len(self.children) > 0:
+            # print(len(self.children))
+            for child in self.children:
+                s +='' + str(child)
+        
+        return s
+
+
+class SubstitutionTree():
+    def __init__(self, root:Node) -> None:
+        self.root = root 
+        self.substitutions_edges = {}
+        self.actual_index = 1
+
+    def add(self, atom: Atom, subst):
+        pass
+        
+    def delete_subst(self, atom:Atom, subst):
+        pass
+
+    def get_substitutions(self, path):
+        #path - массив индексов вершин
+        res = []
+        for i in range(len(path) - 1):
+            subst = self.substitutions_edges[(path[i], path[i + 1])]
+            res.append((path[i], path[i + 1], subst))
+
+        return res
+
+    def __str__(self) -> str:
+        return str(self.root)

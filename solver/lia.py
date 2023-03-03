@@ -86,7 +86,14 @@ class Lia_Formula():
             return s
 
         if my_string.stype == 'variable':
-            self.variables.append(my_string.var_name)
+            var_name = None
+            if "'" in my_string.var_name:
+                var_name = next(self.varnames_generator)
+                self.variables.append(var_name)
+                self.string_to_lia[my_string] = var_name
+                return var_name
+            else:
+                self.variables.append(my_string.var_name)
             self.string_to_lia[my_string] = my_string.var_name
             return my_string.var_name
 
@@ -128,7 +135,7 @@ class Lia_Formula():
         except:
             raise Exception('Ошибка при создании/открытии временного файла')
 
-        for s in smt2_strings:
-            print(s)
+        # for s in smt2_strings:
+        #     print(s)
 
         return not 'unsat' in str(subprocess.check_output(['z3', '-smt2', temp]), encoding='utf-8')

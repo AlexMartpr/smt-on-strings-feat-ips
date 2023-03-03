@@ -9,7 +9,7 @@ f = p.to_formula()
 f.print_dpll_view()
 print('\n')
 dot_strings = []
-result = check_sat(f, dot_strings=dot_strings)
+result, _ = check_sat(f, dot_strings=dot_strings)
 # for ds in dot_strings:
 #     print(ds)
 s = 'digraph G {\n    ' + '\n    '.join([ds for ds in dot_strings]) + '\n}}'

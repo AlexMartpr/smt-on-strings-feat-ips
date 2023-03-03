@@ -39,6 +39,7 @@ class Parser():
         self.literals = []
         self.atoms = []
         self.strings = []
+        self.strings_counter = {}
 
         self.filepath = filepath
         with open(self.filepath) as f:
@@ -162,6 +163,7 @@ class Parser():
             my_string = My_String(
                 'const', cont=string_of_strings[1:second_quote-1])
             if my_string in self.strings:
+                self.strings_counter[my_string] += 1
                 i = self.strings.index(my_string)
                 ret = [self.strings[i]]
                 ret.extend(self.parse_many_strings(
@@ -169,6 +171,7 @@ class Parser():
                 return ret
 
             self.strings.append(my_string)
+            self.strings_counter[my_string] = 1
             ret = [my_string]
             ret.extend(self.parse_many_strings(
                 string_of_strings[second_quote:]))
@@ -186,15 +189,18 @@ class Parser():
         if ' ' not in string_of_strings:
             my_string = My_String('variable', var_name=string_of_strings)
             if my_string in self.strings:
+                self.strings_counter[my_string] += 1
                 i = self.strings.index(my_string)
                 return [self.strings[i]]
 
             self.strings.append(my_string)
+            self.strings_counter[my_string] = 1
             return [my_string]
         first_space = string_of_strings.index(' ')
         my_string = My_String(
             'variable', var_name=string_of_strings[:first_space])
         if my_string in self.strings:
+            self.strings_counter[my_string] += 1
             i = self.strings.index(my_string)
             ret = [self.strings[i]]
             ret.extend(self.parse_many_strings(
@@ -202,6 +208,7 @@ class Parser():
             return ret
 
         self.strings.append(my_string)
+        self.strings_counter[my_string] = 1
         ret = [my_string]
         ret.extend(self.parse_many_strings(string_of_strings[first_space:]))
         return ret
@@ -218,10 +225,12 @@ class Parser():
                 'str.++', concats_strs=strings_to_concat)
             print(my_string)
             if my_string in self.strings:
+                self.strings_counter[my_string] += 1
                 i = self.strings.index(my_string)
                 return self.strings[i]
 
             self.strings.append(my_string)
+            self.strings_counter[my_string] = 1
             return my_string
 
         replaceall_match = re.match(
@@ -233,9 +242,11 @@ class Parser():
             my_string = My_String(
                 'str.replace_all', replace_strs=self.parse_many_strings(replaceall_match.groups()[0]))
             if my_string in self.strings:
+                self.strings_counter[my_string] += 1
                 i = self.strings.index(my_string)
                 return self.strings[i]
             self.strings.append(my_string)
+            self.strings_counter[my_string] = 1
             return my_string
 
         replace_match = re.match(r'\(\s*str\.replace\s*(.*)\s*\)\s*', string)
@@ -243,9 +254,11 @@ class Parser():
             my_string = My_String(
                 'str.replace', replace_strs=self.parse_many_strings(replace_match.groups()[0]))
             if my_string in self.strings:
+                self.strings_counter[my_string] += 1
                 i = self.strings.index(my_string)
                 return self.strings[i]
             self.strings.append(my_string)
+            self.strings_counter[my_string] = 1
             return my_string
 
     def to_formula(self):
@@ -258,5 +271,6 @@ class Parser():
             atoms=deepcopy(self.atoms),
             literals=deepcopy(self.literals),
             clauses=deepcopy(self.clauses),
+            strings_counter=deepcopy(self.strings_counter),
             logic = self.logic if hasattr(self, 'logic') else None
         )

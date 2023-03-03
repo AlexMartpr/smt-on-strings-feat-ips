@@ -97,19 +97,32 @@ def check_node(m, f, old_m, dot_strings=None):
     """
     # 3 теперь можно проверить полученную модель в lia
     if not call_lia(m=m):
-        dot_strings.append(f'{get_m_state(m, f)}-> "ошибка в LIA"')
+        if dot_strings is not None:
+            dot_strings.append(f'{get_m_state(m, f)}-> "ошибка в LIA"')
         print('Противоречие в LIA')
         return False
     print()
 
     # 4 проверяем, осталось ли чего неопределенного в m
     if len(m) == len(f.atoms):
+        # print('MODEL:')
         return call_theory(f, m)
 
     # 4 если осталось, то порождаем 2 ветки
     new_literal = decide(m, f)
 
-    return check_node(m + [new_literal], f, m, dot_strings) or check_node(m+[new_literal.get_conjugate()], f, m, dot_strings)
+    old_m = deepcopy(m)
+    m += [new_literal]
+    sat = check_node(m, f, old_m, dot_strings)
+
+    if not sat:
+        m = deepcopy(old_m)
+        m += [new_literal.get_conjugate()]
+        sat = check_node(m, f, old_m, dot_strings)
+
+    return sat
+
+    # return check_node(m + [new_literal], f, m, dot_strings) or check_node(m+[new_literal.get_conjugate()], f, m, dot_strings)
 
 
 def get_m_state(m, f):
@@ -127,4 +140,8 @@ def check_sat(f, dot_strings=None):
     #     print('Формула не прошла проверку в lia')
     #     return False
 
-    return check_node([], f, None, dot_strings=dot_strings)
+
+    model = []
+    res = check_node(model, f, None, dot_strings=dot_strings)
+    # return check_node([], f, None, dot_strings=dot_strings)
+    return res, model
