@@ -97,38 +97,38 @@ class Nielsen:
         return []
 
 
-    def transformation(self, literal):
-        # atom = deepcopy(self.init_literal.atom)
-        atom = literal.atom
-        substs = self.get_substitutions(atom)
-        res = []
+    # def transformation(self, literal):
+    #     # atom = deepcopy(self.init_literal.atom)
+    #     atom = literal.atom
+    #     substs = self.get_substitutions(atom)
+    #     res = []
 
-        for subst in substs:
-            #new nodes in tree
-            new_atoms = self.apply_substitution(atom, subst)
-            # new_nodes = []
-            for _atom in new_atoms:
-                left_str, right_str = _atom.my_string1, _atom.my_string2
+    #     for subst in substs:
+    #         #new nodes in tree
+    #         new_atoms = self.apply_substitution(atom, subst)
+    #         # new_nodes = []
+    #         for _atom in new_atoms:
+    #             left_str, right_str = _atom.my_string1, _atom.my_string2
 
-                # print(f'Before Simplify = {_atom}')
-                left_str, right_str = self.simplify_strings(left_str=left_str, right_str=right_str)
-                if left_str.stype == right_str.stype == 'const' and left_str.cont == right_str.cont == '':
-                        continue
-                _atom.my_string1, _atom.my_string2 = left_str, right_str
-                # print(f'After Simplify = {_atom}')
+    #             # print(f'Before Simplify = {_atom}')
+    #             left_str, right_str = self.simplify_strings(left_str=left_str, right_str=right_str)
+    #             if left_str.stype == right_str.stype == 'const' and left_str.cont == right_str.cont == '':
+    #                     continue
+    #             _atom.my_string1, _atom.my_string2 = left_str, right_str
+    #             # print(f'After Simplify = {_atom}')
 
-                is_sat = False
-                is_cycle = False
+    #             is_sat = False
+    #             is_cycle = False
 
-                if left_str == right_str:
-                    is_sat = True
-                elif self.check_cycle(atom, _atom):
-                    is_cycle = True
-                #Не забыть подставить в negation правильное значение
-                new_atom = _atom
-                res.append(new_atom)
+    #             if left_str == right_str:
+    #                 is_sat = True
+    #             elif self.check_cycle(atom, _atom):
+    #                 is_cycle = True
+    #             #Не забыть подставить в negation правильное значение
+    #             new_atom = _atom
+    #             res.append(new_atom)
 
-        return res
+    #     return res
 
     
     def remove_literal_from_model(self, model, literal_to_delete):
@@ -174,14 +174,12 @@ class Nielsen:
 
         Уравнение будем менять, если превысили кол-во итераций или переменных стало больше. 
         """
-        # atom = deepcopy(self.init_literal.atom)
         stack = [self.tree.root]
 
         count = 0
         count_itterations = 0
         flag = False
 
-        # while True:
         while len(stack) != 0:
             if flag and count_itterations >= itterations:
                 print(count_itterations)
@@ -229,8 +227,6 @@ class Nielsen:
 
                     # print(f'Before Simplify = {_atom}')
                     left_str, right_str = self.simplify_strings(left_str=left_str, right_str=right_str)
-                    # if left_str.stype == right_str.stype == 'const' and left_str.cont == right_str.cont == '':
-                    #     continue
                     _atom.my_string1, _atom.my_string2 = left_str, right_str
                     # print(f'After Simplify = {_atom}')
 
@@ -243,13 +239,9 @@ class Nielsen:
                         is_cycle = True
                     
                     if is_sat:
-                        # print(f'SAT = {is_sat}')
                         self.remove_literal_from_model(new_model, literal_before)
 
                     if is_cycle:
-                        print(f'is_cycle = {is_cycle}')
-                        print(atom)
-                        print(_atom)
                         continue
 
                     new_model_copy = deepcopy(new_model)
@@ -275,8 +267,6 @@ class Nielsen:
                     variables = get_variables_from_model(new_model_copy.literals)
 
                     if variables > init_variables:
-                        print(initial_formula)
-                        print(new_model_copy)
                         flag = True
 
                     
@@ -304,55 +294,7 @@ class Nielsen:
         return 'good'
 
 
-    # def full_transformation(self, itterations):
-    #     # atom = deepcopy(self.init_literal.atom)
-    #     stack = [self.tree.root]
-
-    #     count = 0
-
-    #     while len(stack) != 0:
-    #         count += 1
-    #         node = stack.pop()
-    #         print(count)
-    #         atom = node.literal.atom
-    #         substs = self.get_substitutions(atom)
-
-    #         for subst in substs:
-    #             #new nodes in tree
-    #             new_atoms = self.apply_substitution(atom, subst)
-    #             # new_nodes = []
-    #             for _atom in new_atoms:
-    #                 left_str, right_str = _atom.my_string1, _atom.my_string2
-
-    #                 # print(f'Before Simplify = {_atom}')
-    #                 left_str, right_str = self.simplify_strings(left_str=left_str, right_str=right_str)
-    #                 if left_str.stype == right_str.stype == 'const' and left_str.cont == right_str.cont == '':
-    #                     continue
-    #                 _atom.my_string1, _atom.my_string2 = left_str, right_str
-    #                 # print(f'After Simplify = {_atom}')
-
-    #                 is_sat = False
-    #                 is_cycle = False
-
-    #                 if left_str == right_str:
-    #                     is_sat = True
-    #                 elif self.check_cycle(atom, _atom):
-    #                     is_cycle = True
-    #                 #Не забыть подставить в negation правильное значение
-    #                 new_literal = Literal(atom=_atom, negation=False)
-    #                 new_node = Node(literal=new_literal, parent=node, index=self.tree.actual_index, sat_marker=is_sat, cycle_marker=is_cycle)
-
-    #                 node.children.append(new_node)
-    #                 self.tree.actual_index += 1
-                    
-    #                 if not(is_sat or is_cycle):
-    #                     stack.append(new_node)
-
-    #     print(count)
-
-
     def apply_substitution(self, atom: Atom, subst: Substitution) -> Atom:
-        #Передаём копию атома! Чтобы не менять исходный
         new_atoms = []
         var_name = subst.variable_name
 
@@ -384,7 +326,6 @@ class Nielsen:
         new_clauses = []
 
         for idx, clause in enumerate(model.clauses):
-            # new_atoms = []
             for literal in clause.literals:
                 atom = literal.atom
                 # for sub in subst.substs:
@@ -393,11 +334,8 @@ class Nielsen:
                 self.change_equation(equation_element, var_name, sub)
                 equation_element = new_atom.my_string2 
                 self.change_equation(equation_element, var_name, sub)
-                # print(new_atom)
                 if new_atom == atom:
                     continue
-                    # new_atoms.append(new_atom)
-                # if len(new_atoms) > 0:
                 if idx not in copy_formula:
                     copy_formula[idx] = deepcopy(clause)
                 if literal in copy_formula[idx].literals:
@@ -486,15 +424,12 @@ class Nielsen:
     #Проверяем, что литерал может подойти под преобразование Нильсена.
     #Считаем, что подойдут все варианты, кроме вариантов с единственным(и) str.replace(_all)
     #в одной или каждой сторонe.
-    #В алгоритме пока обрабатывается только случай для конструкций (=(str.++ ..)(str.++ ..)) 
     def check_literal(literal:Literal):
         atom = literal.atom
         left, right = atom.my_string1, atom.my_string2
 
         if atom.ltype != '=':
             return False
-
-        # return left.stype == 'str.++' and right.stype == 'str.++'
 
         if left.stype == 'str.replace' or left.stype == 'str.replace_all':
             return False
