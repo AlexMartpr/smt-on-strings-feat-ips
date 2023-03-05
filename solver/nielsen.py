@@ -181,11 +181,15 @@ class Nielsen:
         flag = False
         history = []
         same = 0
+        is_empty = False
 
         while len(stack) != 0:
             if flag and count_itterations >= itterations:
+                rt = ''
                 print(count_itterations)
-                return 'bad'
+                if is_empty:
+                    rt +=  'coulde be empty\n'
+                return rt + 'bad'
             count += 1
             node = stack.pop()
             history.append(node.literal.atom)
@@ -226,6 +230,7 @@ class Nielsen:
                     new_literal = Nielsen.find_literal(node.model.literals, h1)
                     #В модели нет больше подходящих литералов
                     if not new_literal or new_literal.atom == atom:
+                        is_empty |= len(node.model.literals) == 0
                         continue
                     print(f'FOUND LITERAL = {new_literal}')
                     new_node = Node(literal=deepcopy(new_literal), parent=node, index=self.tree.actual_index, model=deepcopy(new_model_copy))
@@ -307,6 +312,7 @@ class Nielsen:
                         new_literal = Nielsen.find_literal(new_model_copy.literals)
                         #В модели нет больше подходящих литералов
                         if not new_literal:
+                            is_empty |= len(new_model_copy.literals) == 0
                             continue
                         print(f'FOUND LITERAL = {new_literal}')
 
@@ -319,11 +325,16 @@ class Nielsen:
 
                     stack.append(new_node)
             
+        rt = ''
+        if is_empty:
+            rt +=  'coulde be empty\n'
 
         if flag:
-            return 'bad'
-
-        return 'good'
+            rt += 'bad model'
+            return rt 
+            
+        rt += 'good'
+        return rt
 
 
     def apply_substitution(self, atom: Atom, subst: Substitution) -> Atom:
