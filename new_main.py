@@ -37,7 +37,7 @@ def main():
     # f = Generator().generate().to_formula()
     # p = Parser('tests/dpllt_tests/test_1.smt2')
     # p = Parser('tests/parser_tests/test_10.smt2')
-    p = Parser('tests/modification_tests/test_0.smt2')
+    p = Parser('tests/modification_tests/test_01.smt2')
     # p = Parser('tests/nielsen_tests/test2.smt2')
     f = p.to_formula()
     algorithm(f, its)

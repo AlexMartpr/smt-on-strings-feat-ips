@@ -158,11 +158,11 @@ def prepare_and_check_conflict(left_char_view, right_char_view):
     left_char_view[:] = left_char_view[::-1]
     right_char_view[:] = right_char_view[::-1]
 
-    if len(left_char_view) == 0:
-        left_char_view.append(('char', ''))
+    # if len(left_char_view) == 0:
+    #     left_char_view.append(('char', ''))
     
-    if len(right_char_view) == 0:
-        right_char_view.append(('char', ''))
+    # if len(right_char_view) == 0:
+    #     right_char_view.append(('char', ''))
 
     flag |= r_flag
 
@@ -210,11 +210,11 @@ def prepare_and_apply_simplify(left, right):
     # print(left)
     # print(right)
 
-    if len(left) == 0:
-        left.append(('char', ''))
+    # if len(left) == 0:
+    #     left.append(('char', ''))
     
-    if len(right) == 0:
-        right.append(('char', ''))
+    # if len(right) == 0:
+    #     right.append(('char', ''))
 
 
 def rem_strings_from_my_string(strings_counter, my_string):
@@ -289,6 +289,18 @@ def update_whole_formula(copy_formula, formula, new_clauses):
                 formula.strings.append(my_string2)
 
     formula.clauses = list(filter(lambda x: len(x.literals) > 0, formula.clauses))
+    d = {}
+    for clause in formula.clauses:
+        if clause in d:
+            formula.cluses.remove(clause)
+        else:
+            d[clause] = None 
+    d = {}
+    for literal in formula.literals:
+        if literal in d:
+            formula.literals.remove(literal)
+        else:
+            d[literal] = None 
             
     for clause in new_clauses:
         #Update
@@ -311,6 +323,20 @@ def update_whole_formula(copy_formula, formula, new_clauses):
 
     formula.clauses.extend(new_clauses)
 
+    d = {}
+    for clause in formula.clauses:
+        if clause in d:
+            formula.clauses.remove(clause)
+        else:
+            d[clause] = None 
+
+    d = {}
+    for literal in formula.literals:
+        if literal in d:
+            formula.literals.remove(literal)
+        else:
+            d[literal] = None 
+
     for my_string, counter in formula.strings_counter.items():
         if counter <= 0 and my_string in formula.strings:
             formula.strings.remove(my_string)
@@ -322,8 +348,14 @@ def update_whole_formula(copy_formula, formula, new_clauses):
     for atom in formula.atoms:
         formula.simple_atmoms[atom] = chr(letter)
         letter += 1
+    # print('ATOMS')
+    # for atom in formula.atoms:
+    #     print(atom)
+    # print('LITERALS')
+    # for literal in formula.literals:
+    #     print(literal)
 
-    formula.literals.sort(key=lambda x: formula.simple_atmoms[x.atom])
+    # formula.literals.sort(key=lambda x: formula.simple_atmoms[x.atom])
 
 
 def modify(formula):
@@ -359,7 +391,9 @@ def modify(formula):
                     res['left'] = char_view_left
                     res['right'] = char_view_right
                     res['clause_idx'] = idx
-                    new_clauses.extend(cutting(copy_formula, res))
+                    rt = cutting(copy_formula, res)
+                    # new_clauses.extend(list(dict.fromkeys(rt)))
+                    new_clauses.extend(rt)
             elif check_contains_need_normalize(literal):
                     is_changed = True
                     if idx not in copy_formula:
@@ -368,13 +402,15 @@ def modify(formula):
                     to_delete, more_clauses, more_literals = normalize_contains(literal)
 
                     if literal in copy_formula[idx].literals:
-                            copy_formula[idx].literals.remove(literal)
+                        copy_formula[idx].literals.remove(literal)
 
                     if not to_delete:
+                        # new_clauses.extend(list(dict.fromkeys(more_clauses)))
                         new_clauses.extend(more_clauses)
                         if literal in copy_formula[idx].literals:
                             copy_formula[idx].literals.remove(literal)
                         copy_formula[idx].literals.extend(more_literals)
+                        # copy_formula[idx].literals.extend(list(dict.fromkeys(more_literals)))
                     
 
     update_whole_formula(copy_formula, formula, new_clauses)
@@ -454,14 +490,12 @@ def get_char_view_from_multi(multi):
 
 def split(mult_l, mult_r) -> Atom:
     print('SPLIT')
-    print(mult_l)
-    print(mult_r)
     my_str1 = get_char_view_from_multi(mult_l)
     my_str2 = get_char_view_from_multi(mult_r)
-    print(my_str1)
-    print(my_str2)
+
     if len(my_str1) == 0 and len(my_str2) == 0:
         return None
+
     my_str1 = from_char_view_to_string_view(my_str1)
     my_str2 = from_char_view_to_string_view(my_str2)
     print(str(my_str1))
@@ -528,16 +562,26 @@ def cutting(copy_formula, eq):
 
     prepare_and_apply_simplify(left, right)
     #Если после упрощения ничего не осталось
-    if len(left) == len(right) == 1:
-        left_type = left[0][0]
-        right_type = right[0][0]
-        left_val = left[0][1]
-        right_val = right[0][1]
+    # if len(left) == len(right) == 1:
+    #     left_type = left[0][0]
+    #     right_type = right[0][0]
+    #     left_val = left[0][1]
+    #     right_val = right[0][1]
 
-        if left_type == right_type == 'char' and left_val == right_val == '':
-            if literal in copy_formula[idx].literals:
-                copy_formula[idx].literals.remove(literal)
-            return new_clauses
+    #     if left_type == right_type == 'char' and left_val == right_val == '':
+    #         if literal in copy_formula[idx].literals:
+    #             copy_formula[idx].literals.remove(literal)
+    #         return new_clauses
+
+    if len(left) == len(right) == 0:
+        if literal in copy_formula[idx].literals:
+            copy_formula[idx].literals.remove(literal)
+        return new_clauses
+
+    if len(left) == 0:
+        left.append(('char', ''))
+    else:
+        right.append(('char', ''))
 
     to_delete, cut_l, cut_r, r_cut_l, r_cut_r = prepare_and_check_conflict(left, right)
     print('TO DELETE: ' + str(to_delete))
@@ -562,11 +606,11 @@ def cutting(copy_formula, eq):
                 copy_formula[idx].literals.remove(literal)
             return new_clauses
 
-        if len(left) == 0:
-            left.append(('char', ''))
+        # if len(left) == 0:
+        #     left.append(('char', ''))
 
-        if len(right) == 0:
-            right.append(('char', ''))
+        # if len(right) == 0:
+        #     right.append(('char', ''))
 
         left = left[::-1]
         right = right[::-1]
@@ -581,11 +625,11 @@ def cutting(copy_formula, eq):
                 copy_formula[idx].literals.remove(literal)
             return new_clauses
 
-        if len(left) == 0:
-            left.append(('char', ''))
+        # if len(left) == 0:
+        #     left.append(('char', ''))
 
-        if len(right) == 0:
-            right.append(('char', ''))
+        # if len(right) == 0:
+        #     right.append(('char', ''))
 
         left = left[::-1]
         right = right[::-1]
@@ -610,23 +654,90 @@ def cutting(copy_formula, eq):
 
     #Оставшаяся часть после разрезания
     if len(left) != 0 or len(right) != 0:
-        flag = False
-        if len(left) == 1 and len(right) == 1:
-            left_type = left[0][0]
-            right_type = right[0][0]
-            left_val = left[0][1]
-            right_val = right[0][1]
+        if len(left) == 0:
+            left.append(('char', ''))
+        else:
+            right.append(('char', ''))
+        # flag = False
+        # if len(left) == 1 and len(right) == 1:
+        #     left_type = left[0][0]
+        #     right_type = right[0][0]
+        #     left_val = left[0][1]
+        #     right_val = right[0][1]
 
-            if left_type == 'char' and right_type == 'char' and left_val == '' and right_val == '':
-                flag = True
+        #     if left_type == 'char' and right_type == 'char' and left_val == '' and right_val == '':
+        #         flag = True
 
-        if not flag:
-            last_left = from_char_view_to_string_view(left)   
-            last_right = from_char_view_to_string_view(right)
-            atom = Atom(ltype='=', my_string1=last_left, my_string2=last_right)
-            if atom != literal.atom:
-                new_atoms.append(atom)
-                print('NEW ATOM: ' + str(atom))
+        # if not flag:
+        #     last_left = from_char_view_to_string_view(left)   
+        #     last_right = from_char_view_to_string_view(right)
+        #     atom = Atom(ltype='=', my_string1=last_left, my_string2=last_right)
+        #     if atom != literal.atom:
+        #         new_atoms.append(atom)
+        #         print('NEW ATOM: ' + str(atom))
+
+        to_delete, cut_l, cut_r, r_cut_l, r_cut_r = prepare_and_check_conflict(left, right)
+        print('TO DELETE: ' + str(to_delete))
+        # print(left)
+        # print(right)
+        
+        #Удаляем полностью правило
+        if to_delete and not negation:
+            is_changed = True
+            if literal in copy_formula[idx].literals:
+                copy_formula[idx].literals.remove(literal)
+            return new_clauses
+
+        # Оставляем правило, но удаляем не равные и равные буквы
+        if to_delete and negation:
+            while len(left) > 0 and len(right) > 0 and (left[0][0] != 'variable' or right[0][0] != 'variable'):
+                left = left[1:]
+                right = right[1:]
+
+            if len(left) == 0 and len(right) == 0:
+                if literal in copy_formula[idx].literals:
+                    copy_formula[idx].literals.remove(literal)
+                return new_clauses
+
+            # if len(left) == 0:
+            #     left.append(('char', ''))
+
+            # if len(right) == 0:
+            #     right.append(('char', ''))
+
+            left = left[::-1]
+            right = right[::-1]
+
+            while len(left) > 0 and len(right) > 0 and (left[0][0] != 'variable' or right[0][0] != 'variable'):
+                left = left[1:]
+                right = right[1:]
+
+
+            if len(left) == 0 and len(right) == 0:
+                if literal in copy_formula[idx].literals:
+                    copy_formula[idx].literals.remove(literal)
+                return new_clauses
+
+            # if len(left) == 0:
+            #     left.append(('char', ''))
+
+            # if len(right) == 0:
+            #     right.append(('char', ''))
+
+            left = left[::-1]
+            right = right[::-1]
+
+        if len(left) > 0 or len(right) > 0:
+            if len(left) == 0:
+                left.append(('char', ''))
+            else:
+                right.append(('char', ''))
+        last_left = from_char_view_to_string_view(left)   
+        last_right = from_char_view_to_string_view(right)
+        atom = Atom(ltype='=', my_string1=last_left, my_string2=last_right)
+        if atom != literal.atom:
+            new_atoms.append(atom)
+            print('NEW ATOM: ' + str(atom))
 
     if len(new_atoms) > 0:
         is_changed = True

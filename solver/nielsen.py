@@ -332,7 +332,7 @@ class Nielsen:
         if flag:
             rt += 'bad model'
             return rt 
-            
+
         rt += 'good'
         return rt
 
@@ -405,8 +405,12 @@ class Nielsen:
                     my_string.stype = 'str.++'
                     my_string.concats_strs = sub_str.concats_strs
                     my_string.var_name = None
-                else:
+                elif sub_str.stype == 'variable':
                     my_string.var_name = sub_str.var_name
+                else:
+                    my_string.stype = 'const'
+                    my_string.cont = ''
+                    my_string.var_name = None
         elif stype != 'const':
             if my_string.concats_strs:
                 for i, _str in enumerate(my_string.concats_strs):

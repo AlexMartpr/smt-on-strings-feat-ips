@@ -148,6 +148,9 @@ class Literal():
         """Возвращает объект-копию литерала"""
         return Literal(self.atom, self.negation, decisive=decisive)
 
+    def __hash__(self):
+        return len(self.__str__())
+
 
 class Clause():
     def __init__(self, literals):
@@ -168,6 +171,9 @@ class Clause():
             if x not in self.literals:
                 return False
         return True
+
+    def __hash__(self):
+        return len(self.__str__())
 
 
 class Formula():
