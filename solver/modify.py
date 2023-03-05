@@ -197,12 +197,18 @@ def simplify(left, right):
 
 
 def prepare_and_apply_simplify(left, right):
+    # print('BEFORE SIMPLIFY')
+    # print(left)
+    # print(right)
     simplify(left, right)
     left[:] = left[::-1]
     right[:] = right[::-1]
     simplify(left, right)
     left[:] = left[::-1]
     right[:] = right[::-1]
+    # print('AFTER SIMPLIFY')
+    # print(left)
+    # print(right)
 
     if len(left) == 0:
         left.append(('char', ''))
@@ -400,6 +406,9 @@ def from_char_view_to_string_view(char_view):
     str_view = ''
     is_empty_char = False
 
+    if len(char_view) == 0:
+        return My_String(stype='const', cont='')
+
     for char in char_view:
         char_type = char[0]
         char_view = char[1]
@@ -445,8 +454,14 @@ def get_char_view_from_multi(multi):
 
 def split(mult_l, mult_r) -> Atom:
     print('SPLIT')
+    print(mult_l)
+    print(mult_r)
     my_str1 = get_char_view_from_multi(mult_l)
     my_str2 = get_char_view_from_multi(mult_r)
+    print(my_str1)
+    print(my_str2)
+    if len(my_str1) == 0 and len(my_str2) == 0:
+        return None
     my_str1 = from_char_view_to_string_view(my_str1)
     my_str2 = from_char_view_to_string_view(my_str2)
     print(str(my_str1))
@@ -479,6 +494,7 @@ def left_right_itteration(left, right):
 
         if multiset_l == multiset_r:
             atom = split(multiset_l, multiset_r)
+            print(atom)
             # упрощение после разрезания
             left[:] = left[idx:]
             right[:] = right[idx:]
@@ -487,8 +503,9 @@ def left_right_itteration(left, right):
             multiset_l = {}
             multiset_r = {}
             idx = 0
-            new_atoms.append(atom)
-            print('NEW ATOM: ' + str(atom))
+            if atom is not None:
+                new_atoms.append(atom)
+                print('NEW ATOM: ' + str(atom))
         
         # idx += 1
 
@@ -515,15 +532,17 @@ def cutting(copy_formula, eq):
         left_type = left[0][0]
         right_type = right[0][0]
         left_val = left[0][1]
-        riht_val = right[0][1]
+        right_val = right[0][1]
 
-        if left_type == right_type == 'char' and left_val == riht_val == '':
+        if left_type == right_type == 'char' and left_val == right_val == '':
             if literal in copy_formula[idx].literals:
                 copy_formula[idx].literals.remove(literal)
             return new_clauses
 
     to_delete, cut_l, cut_r, r_cut_l, r_cut_r = prepare_and_check_conflict(left, right)
-    # print(to_delete)
+    print('TO DELETE: ' + str(to_delete))
+    # print(left)
+    # print(right)
     
     #Удаляем полностью правило
     if to_delete and not negation:
@@ -538,16 +557,16 @@ def cutting(copy_formula, eq):
             left = left[1:]
             right = right[1:]
 
+        if len(left) == 0 and len(right) == 0:
+            if literal in copy_formula[idx].literals:
+                copy_formula[idx].literals.remove(literal)
+            return new_clauses
+
         if len(left) == 0:
             left.append(('char', ''))
 
         if len(right) == 0:
             right.append(('char', ''))
-
-        if len(left) == 0 and len(right) == 0:
-            if literal in copy_formula[idx].literals:
-                copy_formula[idx].literals.remove(literal)
-            return new_clauses
 
         left = left[::-1]
         right = right[::-1]
@@ -556,22 +575,26 @@ def cutting(copy_formula, eq):
             left = left[1:]
             right = right[1:]
 
-        if len(left) == 0:
-            left.append(('char', ''))
-
-        if len(right) == 0:
-            right.append(('char', ''))
 
         if len(left) == 0 and len(right) == 0:
             if literal in copy_formula[idx].literals:
                 copy_formula[idx].literals.remove(literal)
             return new_clauses
 
+        if len(left) == 0:
+            left.append(('char', ''))
+
+        if len(right) == 0:
+            right.append(('char', ''))
+
         left = left[::-1]
         right = right[::-1]
 
     new_atoms = left_right_itteration(left, right)
     new_atoms = new_atoms[:len(new_atoms) - 1]
+    # print('left_right_itteration')
+    # print(left)
+    # print(right)
 
     #R -> L
     left = left[::-1]
@@ -579,15 +602,31 @@ def cutting(copy_formula, eq):
     new_atoms.extend(left_right_itteration(left, right))
     left = left[::-1]
     right = right[::-1]
+    # print('reverse left_right_itteration')
+    # print(left)
+    # print(right)
+
+    # print(new_atoms)
 
     #Оставшаяся часть после разрезания
     if len(left) != 0 or len(right) != 0:
-        last_left = from_char_view_to_string_view(left)   
-        last_right = from_char_view_to_string_view(right)
-        atom = Atom(ltype='=', my_string1=last_left, my_string2=last_right)
-        if atom != literal.atom:
-            new_atoms.append(atom)
-            print('NEW ATOM: ' + str(atom))
+        flag = False
+        if len(left) == 1 and len(right) == 1:
+            left_type = left[0][0]
+            right_type = right[0][0]
+            left_val = left[0][1]
+            right_val = right[0][1]
+
+            if left_type == 'char' and right_type == 'char' and left_val == '' and right_val == '':
+                flag = True
+
+        if not flag:
+            last_left = from_char_view_to_string_view(left)   
+            last_right = from_char_view_to_string_view(right)
+            atom = Atom(ltype='=', my_string1=last_left, my_string2=last_right)
+            if atom != literal.atom:
+                new_atoms.append(atom)
+                print('NEW ATOM: ' + str(atom))
 
     if len(new_atoms) > 0:
         is_changed = True

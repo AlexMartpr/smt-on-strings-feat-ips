@@ -79,9 +79,25 @@ class My_String():
                     my_string2.var_name + "'" == my_string1.var_name
 
         if my_string1.stype == 'str.++':
-            return my_string1.concats_strs == my_string2.concats_strs
+            if len(my_string1.concats_strs) != len(my_string2.concats_strs):
+                return False 
+            
+            for str1, str2 in zip(my_string1.concats_strs, my_string2.concats_strs):
+                rt = My_String.extend_eq(str1, str2)
+                if not rt:
+                    return False
 
-        return my_string1.replace_strs == my_string2.replace_strs
+            return True
+
+        if len(my_string1.replace_strs) != len(my_string2.replace_strs):
+                return False 
+            
+        for str1, str2 in zip(my_string1.replace_strs, my_string2.replace_strs):
+            rt = My_String.extend_eq(str1, str2)
+            if not rt:
+                return False
+
+        return True
 
 
     def __hash__(self):

@@ -179,6 +179,8 @@ class Nielsen:
         count = 0
         count_itterations = 0
         flag = False
+        history = []
+        same = 0
 
         while len(stack) != 0:
             if flag and count_itterations >= itterations:
@@ -186,6 +188,7 @@ class Nielsen:
                 return 'bad'
             count += 1
             node = stack.pop()
+            history.append(node.literal.atom)
             print(count)
             # print(node)
             atom = node.literal.atom
@@ -206,6 +209,34 @@ class Nielsen:
 
             #     stack.append(new_node)
             #     continue
+
+            if len(history) > 1:
+                # print('HISTORY')
+                h1 = history[-1]
+                h2 = history[-2]
+                # print(h1)
+                # print(h2)
+                if self.check_cycle(h1, h2):
+                    print('found cycle in history')
+                    same =+ 1
+
+                if same == itterations:
+                    print('equal same and itterations')
+                    same = 0
+                    new_literal = Nielsen.find_literal(node.model.literals, h1)
+                    #В модели нет больше подходящих литералов
+                    if not new_literal or new_literal.atom == atom:
+                        continue
+                    print(f'FOUND LITERAL = {new_literal}')
+                    new_node = Node(literal=deepcopy(new_literal), parent=node, index=self.tree.actual_index, model=deepcopy(new_model_copy))
+
+                    node.children.append(new_node)
+                    self.tree.actual_index += 1
+
+                    # print(new_model_copy)
+
+                    stack.append(new_node)
+                    continue
 
             for subst in substs:
                 print('Применяем подстановку')
@@ -241,6 +272,7 @@ class Nielsen:
                     if is_sat:
                         self.remove_literal_from_model(new_model, literal_before)
 
+                    print('CYCLE: ' + str(is_cycle))
                     if is_cycle:
                         continue
 
