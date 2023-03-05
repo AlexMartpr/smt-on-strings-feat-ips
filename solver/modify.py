@@ -105,7 +105,7 @@ def get_char_view(my_str: My_String):
 def check_conflict(left_char_view, right_char_view):
     first_el_l, first_el_r = left_char_view[0], right_char_view[0]
 
-    if first_el_r[0] != 'char' and first_el_l[0] != 'char':
+    if first_el_r[0] != 'char' or first_el_l[0] != 'char':
         return False, [[]], [[]]
 
     cut_l = [[]]
@@ -580,11 +580,11 @@ def cutting(copy_formula, eq):
 
     if len(left) == 0:
         left.append(('char', ''))
-    else:
+    elif len(right) == 0:
         right.append(('char', ''))
 
     to_delete, cut_l, cut_r, r_cut_l, r_cut_r = prepare_and_check_conflict(left, right)
-    print('TO DELETE: ' + str(to_delete))
+    # print('TO DELETE: ' + str(to_delete))
     # print(left)
     # print(right)
     
@@ -656,7 +656,7 @@ def cutting(copy_formula, eq):
     if len(left) != 0 or len(right) != 0:
         if len(left) == 0:
             left.append(('char', ''))
-        else:
+        elif len(right) == 0:
             right.append(('char', ''))
         # flag = False
         # if len(left) == 1 and len(right) == 1:
@@ -730,7 +730,7 @@ def cutting(copy_formula, eq):
         if len(left) > 0 or len(right) > 0:
             if len(left) == 0:
                 left.append(('char', ''))
-            else:
+            elif  len(right) == 0:
                 right.append(('char', ''))
         last_left = from_char_view_to_string_view(left)   
         last_right = from_char_view_to_string_view(right)
