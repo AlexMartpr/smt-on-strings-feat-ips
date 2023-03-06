@@ -81,7 +81,10 @@ def get_char_view(my_str: My_String):
     if my_str.concats_strs:
         for _str in my_str.concats_strs:
             if _str.stype == 'const':
-                view.extend([('char', val) for val in _str.cont])
+                if len(_str.cont) == 0:
+                    view.append(('char', ''))
+                else:
+                    view.extend([('char', val) for val in _str.cont])
                 # view.extend([('char', val, False) for val in _str.cont[:-1]])
                 # view.append(('char', _str.cont[-1], True)) 
             elif _str.stype == 'variable':
@@ -91,7 +94,10 @@ def get_char_view(my_str: My_String):
                 break
     else:               
         if my_str.stype == 'const':
-            view.extend([('char', val) for val in my_str.cont])
+            if len(my_str.cont) == 0:
+                view.append(('char', ''))
+            else:
+                view.extend([('char', val) for val in my_str.cont])
             # view.extend([('char', val) for val in my_str.cont[:-1]])
             # view.append(('char', my_str.cont[-1], True)) 
         elif my_str.stype == 'variable':
@@ -103,6 +109,9 @@ def get_char_view(my_str: My_String):
 
 
 def check_conflict(left_char_view, right_char_view):
+    # print('CHECK CONFLICT')
+    # print(left_char_view)
+    # print(right_char_view)
     first_el_l, first_el_r = left_char_view[0], right_char_view[0]
 
     if first_el_r[0] != 'char' or first_el_l[0] != 'char':
@@ -128,7 +137,8 @@ def check_conflict(left_char_view, right_char_view):
 
         if type_el_l != 'char' or type_el_r != 'char':
             break
-
+        # print(val_el_l)
+        # print(val_el_r)
         if val_el_l != val_el_r:
             flag = True
             cut_l[cut_idx].append(val_el_l)
@@ -154,6 +164,12 @@ def prepare_and_check_conflict(left_char_view, right_char_view):
     flag, cut_l, cut_r = check_conflict(left_char_view,  right_char_view)
     left_char_view[:] = left_char_view[::-1]
     right_char_view[:] = right_char_view[::-1]
+    if len(left_char_view) == 0 and len(right_char_view) == 0:
+        return True, [[]], [[]], [[]], [[]]
+    if len(left_char_view) == 0:
+        left_char_view.append(('char', ''))
+    elif len(right_char_view) == 0:
+        right_char_view.append(('char', ''))    
     r_flag, r_cut_l, r_cut_r = check_conflict(left_char_view, right_char_view)
     left_char_view[:] = left_char_view[::-1]
     right_char_view[:] = right_char_view[::-1]
@@ -246,6 +262,11 @@ def add_strings_from_my_string(strings_counter, my_string):
 
 
 def update_whole_formula(copy_formula, formula, new_clauses):
+    # print('COPY FORMULA')
+    # for k, v in copy_formula.items():
+    #     print(k)
+    #     print(v)
+    # print(copy_formula)
     for clause_idx, clause in copy_formula.items():
         # print(clause_idx)
         # print(formula.clauses[clause_idx])
@@ -290,15 +311,15 @@ def update_whole_formula(copy_formula, formula, new_clauses):
 
     formula.clauses = list(filter(lambda x: len(x.literals) > 0, formula.clauses))
     d = {}
-    for clause in formula.clauses:
+    for idx, clause in enumerate(formula.clauses):
         if clause in d:
-            formula.cluses.remove(clause)
+            formula.clauses.pop(idx)
         else:
-            d[clause] = None 
+            d[clause] = None
     d = {}
-    for literal in formula.literals:
+    for idx, literal in enumerate(formula.literals):
         if literal in d:
-            formula.literals.remove(literal)
+            formula.literals.pop(idx)
         else:
             d[literal] = None 
             
@@ -324,18 +345,40 @@ def update_whole_formula(copy_formula, formula, new_clauses):
     formula.clauses.extend(new_clauses)
 
     d = {}
-    for clause in formula.clauses:
+    for idx, clause in enumerate(formula.clauses):
         if clause in d:
-            formula.clauses.remove(clause)
+            formula.clauses.pop(idx)
         else:
-            d[clause] = None 
-
+            d[clause] = None
     d = {}
-    for literal in formula.literals:
+    for idx, literal in enumerate(formula.literals):
         if literal in d:
-            formula.literals.remove(literal)
+            formula.literals.pop(idx)
         else:
             d[literal] = None 
+
+    for literal in formula.literals:
+        exists = True
+        for clause in formula.clauses:
+            if literal not in clause.literals:
+                exists = False
+            else:
+                exists = True
+                break 
+        if not exists:
+            atom = literal.atom
+            exists_atom = False
+            formula.literals.remove(literal)
+            for _literal in formula.literals:
+                if atom == _literal.atom:
+                    exists = True
+                    break
+            if not exists_atom:
+                if atom in formula.atoms:
+                    formula.atoms.remove(atom)
+                my_str1, my_str2 = atom.my_string1, atom.my_string2
+                rem_strings_from_my_string(formula.strings_counter, my_str1)
+                rem_strings_from_my_string(formula.strings_counter, my_str2)
 
     for my_string, counter in formula.strings_counter.items():
         if counter <= 0 and my_string in formula.strings:
@@ -364,6 +407,7 @@ def modify(formula):
     copy_formula = {}
     res = {}
     new_clauses = []
+    before_formula = deepcopy(formula)
 
     for idx, clause in enumerate(formula.clauses):
         # print('CLAUS: \n' + str(clause))
@@ -374,7 +418,8 @@ def modify(formula):
             if atom.ltype == '=':
                 left_str = atom.my_string1
                 right_str = atom.my_string2
-                if left_str.stype == 'str.++' or right_str.stype == 'str.++':
+                if 'str.replace' not in left_str.stype and 'str.replace' not in right_str.stype:
+                # if left_str.stype == 'str.++' or right_str.stype == 'str.++':
                     if idx not in copy_formula:
                         copy_formula[idx] = deepcopy(clause)
                     print('LITERAL: \n' + str(literal))
@@ -413,9 +458,18 @@ def modify(formula):
                         # copy_formula[idx].literals.extend(list(dict.fromkeys(more_literals)))
                     
 
+    # print('NEW CLAUSES')
+    # for clause in new_clauses:
+    #     print(clause)
+    
     update_whole_formula(copy_formula, formula, new_clauses)
 
-    return is_changed
+    if formula.clauses == before_formula.clauses:
+        return False
+
+    return True
+
+    # return is_changed
              
 
 def add_multi(element, multiset):
@@ -574,6 +628,8 @@ def cutting(copy_formula, eq):
     #         return new_clauses
 
     if len(left) == len(right) == 0:
+        # print("EQUAL")
+        # print(literal)
         if literal in copy_formula[idx].literals:
             copy_formula[idx].literals.remove(literal)
         return new_clauses
@@ -635,7 +691,7 @@ def cutting(copy_formula, eq):
         right = right[::-1]
 
     new_atoms = left_right_itteration(left, right)
-    new_atoms = new_atoms[:len(new_atoms) - 1]
+    # new_atoms = new_atoms[:len(new_atoms) - 1]
     # print('left_right_itteration')
     # print(left)
     # print(right)

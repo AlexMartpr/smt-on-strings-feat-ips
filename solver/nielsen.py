@@ -9,7 +9,7 @@ class Nielsen:
     #Под нужным литералом подразумевается следуюшая конструкция (=(str.++ ..)(str.++ ..))
     def __init__(self, literal:Literal, initial_model) -> None:
         self.init_literal = literal
-        root = Node(literal=deepcopy(literal), index=0, model=initial_model)
+        root = Node(literal=deepcopy(literal), index=0, model=deepcopy(initial_model))
         self.tree = SubstitutionTree(root=root)
         self.initial_model = initial_model
         self.substitutions_map = {}
@@ -182,14 +182,15 @@ class Nielsen:
         history = []
         same = 0
         is_empty = False
+        is_conflicting = False
+        is_cycling = False
+        has_sat = False
+        models = []
 
         while len(stack) != 0:
             if flag and count_itterations >= itterations:
-                rt = ''
                 print(count_itterations)
-                if is_empty:
-                    rt +=  'coulde be empty\n'
-                return rt + 'bad'
+                break
             count += 1
             node = stack.pop()
             history.append(node.literal.atom)
@@ -271,44 +272,75 @@ class Nielsen:
 
                     if left_str == right_str:
                         is_sat = True
-                    elif self.check_cycle(atom, _atom):
+                    elif Nielsen.check_cycle(atom, _atom):
                         is_cycle = True
+                        is_cycling |= True
                     
                     if is_sat:
                         self.remove_literal_from_model(new_model, literal_before)
 
                     print('CYCLE: ' + str(is_cycle))
-                    if is_cycle:
-                        continue
+                    # if is_cycle:
+                    #     print('CYCLE: ' + str(is_cycle))
+                        # continue
 
                     new_model_copy = deepcopy(new_model)
-                    is_changed = modify(new_model_copy)
-                    res, model = check_sat(new_model_copy)
-                    new_model_copy = get_formula_from_model(model)
-                    # print(new_model_copy)
-                    while True:
-                        # print('FORMULA BEFORE MODIFY')
-                        # print(new_model_copy)
+
+                    if not(is_sat or is_cycle):
                         is_changed = modify(new_model_copy)
-                        # print('FORMULA AFTER MODIFY')
-                        # print(new_model_copy)
-                        if not is_changed:
-                            break
                         res, model = check_sat(new_model_copy)
                         new_model_copy = get_formula_from_model(model)
+                        if len(new_model_copy.literals) == 0:
+                            is_conflicting |= False
+                            continue
                         # print(new_model_copy)
-                    
-                    initial_formula = node.parent.model if node.parent else node.model
+                        while True:
+                            # print('FORMULA BEFORE MODIFY')
+                            # print(new_model_copy)
+                            is_changed = modify(new_model_copy)
+                            # print(is_changed)
+                            # print('FORMULA AFTER MODIFY')
+                            # print(new_model_copy)
+                            if not is_changed:
+                                break
+                            res, model = check_sat(new_model_copy)
+                            if not res:
+                                is_conflicting |= True
+                            else:
+                                has_sat = True
+                            new_model_copy = get_formula_from_model(model)
+                            print(res)
+                            # print(new_model_copy)
+                        
+                        initial_formula = node.parent.model if node.parent else node.model
 
-                    init_variables = get_variables_from_model(initial_formula.literals)
-                    variables = get_variables_from_model(new_model_copy.literals)
+                        init_variables = get_variables_from_model(initial_formula.literals)
+                        variables = get_variables_from_model(new_model_copy.literals)
 
-                    if variables > init_variables:
-                        flag = True
+                        if variables > init_variables:
+                            flag = True
 
-                    
+                    # print('FORMULA BEFORE MODIFY')
+                    # print(new_model_copy)
+                    modify(new_model_copy)
+                    if has_sat:
+                        print('HAS SAT')
+                        # exit(-1)
+                        models.append(deepcopy(new_model_copy))
+                    # print('FORMULA AFTER MODIFY')
+                    # print(new_model_copy)
+
                     new_literal = Literal(atom=deepcopy(_atom), negation=node.literal.negation)
-                    if new_literal not in new_model_copy.literals:
+                    if is_cycle:
+                        new_literal = Nielsen.find_literal(new_model_copy.literals, new_literal)
+                        # print(new_model_copy)
+                        # print('NEW LITERAL FROM CYCLE : ' + str(new_literal))
+                        #В модели нет больше подходящих литералов
+                        if not new_literal:
+                            is_empty |= len(new_model_copy.literals) == 0
+                            continue
+                        print(f'FOUND LITERAL = {new_literal}')
+                    elif new_literal not in new_model_copy.literals:
                         new_literal = Nielsen.find_literal(new_model_copy.literals)
                         #В модели нет больше подходящих литералов
                         if not new_literal:
@@ -325,16 +357,11 @@ class Nielsen:
 
                     stack.append(new_node)
             
-        rt = ''
-        if is_empty:
-            rt +=  'coulde be empty\n'
+        #Модель противоречива
+        if (is_conflicting or is_cycling) and not has_sat:
+            return False, []
 
-        if flag:
-            rt += 'bad model'
-            return rt 
-
-        rt += 'good'
-        return rt
+        return True, models
 
 
     def apply_substitution(self, atom: Atom, subst: Substitution) -> Atom:
@@ -418,9 +445,26 @@ class Nielsen:
                         if sub_str.stype == 'str.++':
                             my_string.concats_strs[i:i+1] = deepcopy(sub_str.concats_strs)
                         else:
-                             my_string.concats_strs[i] = deepcopy(sub_str)
+                            if sub_str.stype == 'const':
+                                my_string.concats_strs.pop(i)
+                            else:   
+                                my_string.concats_strs[i] = deepcopy(sub_str)
                     elif _str.stype != 'const':
                         self.go_inside_my_string(_str, var_name, sub_str)
+                if len(my_string.concats_strs) == 1:
+                    _str = my_string.concats_strs[0]
+                    if sub_str.stype == 'str.++':
+                        my_string.stype = 'str.++'
+                        my_string.concats_strs = sub_str.concats_strs
+                        my_string.var_name = None
+                    elif sub_str.stype == 'variable':
+                        my_string.stype == 'variable'
+                        my_string.concats_strs = None
+                        my_string.var_name = sub_str.var_name
+                    else:
+                        my_string.stype = 'const'
+                        my_string.cont = _str.cont
+                        my_string.concats_strs = None
 
             if my_string.replace_strs:
                 for _str in my_string.replace_strs:
@@ -433,8 +477,8 @@ class Nielsen:
 
         self.go_inside_my_string(eq_el, var_name, sub_str)
 
-
-    def check_cycle(self, parent_atom: Atom, child_atom: Atom):
+    @staticmethod
+    def check_cycle(parent_atom: Atom, child_atom: Atom):
         left_parent, right_parent = parent_atom.my_string1, parent_atom.my_string2
         left_child, right_child = child_atom.my_string1, child_atom.my_string2
 
@@ -461,7 +505,10 @@ class Nielsen:
         for literal in literals:
             # print(f'{str(literal)}, {Nielsen.check_literal(literal)}')
             if Nielsen.check_literal(literal):
-                if not not_found or literal != not_found:
+                if not_found:
+                    if literal != not_found and not Nielsen.check_cycle(literal.atom, not_found.atom):
+                        return literal 
+                else:
                     return literal
 
         return None
