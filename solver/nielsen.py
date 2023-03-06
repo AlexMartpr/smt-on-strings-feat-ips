@@ -331,16 +331,17 @@ class Nielsen:
                     # print(new_model_copy)
 
                     new_literal = Literal(atom=deepcopy(_atom), negation=node.literal.negation)
-                    if is_cycle:
-                        new_literal = Nielsen.find_literal(new_model_copy.literals, new_literal)
+                    if is_cycle or is_sat:
+                        continue
+                        # new_literal = Nielsen.find_literal(new_model_copy.literals, new_literal)
                         # print(new_model_copy)
                         # print('NEW LITERAL FROM CYCLE : ' + str(new_literal))
                         #В модели нет больше подходящих литералов
-                        if not new_literal:
-                            is_empty |= len(new_model_copy.literals) == 0
-                            continue
-                        print(f'FOUND LITERAL = {new_literal}')
-                    elif new_literal not in new_model_copy.literals:
+                        # if not new_literal:
+                        #     is_empty |= len(new_model_copy.literals) == 0
+                        #     continue
+                        # print(f'FOUND LITERAL = {new_literal}')
+                    if new_literal not in new_model_copy.literals:
                         new_literal = Nielsen.find_literal(new_model_copy.literals)
                         #В модели нет больше подходящих литералов
                         if not new_literal:
