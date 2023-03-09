@@ -60,9 +60,9 @@ def algorithm(f, its):
             if not flag:
                 new_models.append(model)
 
-        for idx, model in enumerate(new_models):
-            print(f'Модель #{idx + 1}')
-            print(model)
+        # for idx, model in enumerate(new_models):
+        #     print(f'Модель #{idx + 1}')
+        #     print(model)
 
         if len(new_models) == 0:
             print('Разбиение привело к пустой модели')
@@ -86,7 +86,7 @@ def main():
     # f = Generator().generate().to_formula()
     # p = Parser('tests/dpllt_tests/test_1.smt2')
     # p = Parser('tests/parser_tests/test_10.smt2')
-    p = Parser('tests/modification_tests/test_01.smt2')
+    p = Parser('tests/modification_tests/test_03.smt2')
     # p = Parser('tests/nielsen_tests/test2.smt2')
     f = p.to_formula()
     algorithm(f, its)

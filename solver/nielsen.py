@@ -250,6 +250,7 @@ class Nielsen:
                 print('Подстановка:')
                 print('\t' + str(subst))
                 new_atoms = self.apply_substitution(deepcopy(atom), subst)
+                # print(new_atoms)
                 for _atom in new_atoms:
                     print(_atom)
                 print('Конец')
@@ -441,31 +442,73 @@ class Nielsen:
                     my_string.var_name = None
         elif stype != 'const':
             if my_string.concats_strs:
-                for i, _str in enumerate(my_string.concats_strs):
+                i = 0
+                # print('new')
+                # print(sub_str)
+                while i < len(my_string.concats_strs):
+                    # print(i)
+                    _str = my_string.concats_strs[i]
                     if _str.stype == 'variable' and _str.var_name == var_name:
                         if sub_str.stype == 'str.++':
                             my_string.concats_strs[i:i+1] = deepcopy(sub_str.concats_strs)
+                            i += 2
+                            continue
                         else:
                             if sub_str.stype == 'const':
+                                # print('pop' + str(i))
                                 my_string.concats_strs.pop(i)
+                                continue
                             else:   
                                 my_string.concats_strs[i] = deepcopy(sub_str)
                     elif _str.stype != 'const':
                         self.go_inside_my_string(_str, var_name, sub_str)
+                    i += 1
+                # for i, _str in enumerate(my_string.concats_strs):
+                #     print(i)
+                #     if _str.stype == 'variable' and _str.var_name == var_name:
+                #         if sub_str.stype == 'str.++':
+                #             my_string.concats_strs[i:i+1] = deepcopy(sub_str.concats_strs)
+                #         else:
+                #             if sub_str.stype == 'const':
+                #                 print('pop' + str(i))
+                #                 my_string.concats_strs.pop(i)
+                #             else:   
+                #                 my_string.concats_strs[i] = deepcopy(sub_str)
+                #     elif _str.stype != 'const':
+                #         self.go_inside_my_string(_str, var_name, sub_str)
                 if len(my_string.concats_strs) == 1:
                     _str = my_string.concats_strs[0]
-                    if sub_str.stype == 'str.++':
-                        my_string.stype = 'str.++'
-                        my_string.concats_strs = sub_str.concats_strs
-                        my_string.var_name = None
-                    elif sub_str.stype == 'variable':
-                        my_string.stype == 'variable'
-                        my_string.concats_strs = None
-                        my_string.var_name = sub_str.var_name
-                    else:
-                        my_string.stype = 'const'
-                        my_string.cont = _str.cont
-                        my_string.concats_strs = None
+                    my_string.stype = _str.stype
+                    my_string.concats_strs = None 
+                    my_string.var_name = _str.var_name
+                    my_string.replace_str =_str.replace_strs
+                    my_string.cont = _str.cont
+                    # if sub_str.stype == 'str.++':
+                    #     my_string.concats_strs = sub_str.concats_strs
+                    # elif sub_str.stype == 'variable':
+                    #     my_string.stype == 'variable'
+                    #     my_string.concats_strs = None
+                    #     my_string.var_name = sub_str.var_name
+                    # else:
+                    #     my_string.stype = 'const'
+                    #     my_string.cont = _str.cont
+                    #     my_string.concats_strs = None
+                elif len(my_string.concats_strs) == 0:
+                    # print('ноль')
+                    my_string.stype = 'const'
+                    my_string.concats_strs = None 
+                    my_string.cont = ''
+                    # if sub_str.stype == 'str.++':
+                    #     my_string.stype = 'str.++'
+                    #     my_string.concats_strs = sub_str.concats_strs
+                    # elif sub_str.stype == 'variable':
+                    #     my_string.stype == 'variable'
+                    #     my_string.concats_strs = None
+                    #     my_string.var_name = sub_str.var_name
+                    # else:
+                    #     my_string.stype = 'const'
+                    #     my_string.cont = ''
+                    #     my_string.concats_strs = None
 
             if my_string.replace_strs:
                 for _str in my_string.replace_strs:
